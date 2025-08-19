@@ -16,7 +16,7 @@ pipeline {
         stage('AKS Login') {
             steps {
                 // Use your JSON secret for service principal
-                withCredentials([string(credentialsId: 'azure-sp-adk-auth', variable: 'AZURE_SP_JSON')]) {
+                withCredentials([string(credentialsId: 'azure-sp-sdk-auth', variable: 'AZURE_SP_JSON')]) {
                     sh '''
                     # Parse JSON from the secret
                     AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
