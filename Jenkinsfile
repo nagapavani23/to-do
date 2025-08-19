@@ -18,19 +18,23 @@ pipeline {
         }
 
         stage('AKS Login') {
-            steps {
-                withCredentials([string(credentialsId: 'azure-sp-sdk-auth', variable: 'AZURE_SP_JSON')]) {
-                    sh '''
-                    AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
-                    AZURE_CLIENT_SECRET=$(echo $AZURE_SP_JSON | jq -r '.clientSecret')
-                    AZURE_TENANT_ID=$(echo $AZURE_SP_JSON | jq -r '.tenantId')
+    steps {
+        withCredentials([string(credentialsId: 'azure-sp-sdk-auth', variable: 'AZURE_SP_JSON')]) {
+            sh '''
+            AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
+            AZURE_CLIENT_SECRET=$(echo $AZURE_SP_JSON | jq -r '.clientSecret')
+            AZURE_TENANT_ID=$(echo $AZURE_SP_JSON | jq -r '.tenantId')
 
-                    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-                    az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
-                    '''
-                }
-            }
+            az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+            az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
+
+            # Debug: show current context
+            kubectl config current-context || true
+            kubectl get nodes || true
+            '''
         }
+    }
+}
 
         stage('Docker Login') {
             steps {
@@ -75,22 +79,23 @@ pipeline {
         }
 
         stage('Create Docker Secret on AKS') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKERHUB_USER',
-                    passwordVariable: 'DOCKERHUB_PASS'
-                )]) {
-                    sh '''
-                    kubectl create secret docker-registry dockerhub-secret \
-                        --docker-username=$DOCKERHUB_USER \
-                        --docker-password=$DOCKERHUB_PASS \
-                        --docker-server=https://index.docker.io/v1/ \
-                        --dry-run=client -o yaml | kubectl apply -f -
-                    '''
-                }
-            }
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'dockerhub-creds',
+            usernameVariable: 'DOCKERHUB_USER',
+            passwordVariable: 'DOCKERHUB_PASS'
+        )]) {
+            sh '''
+            kubectl create secret docker-registry dockerhub-secret \
+                --docker-username=$DOCKERHUB_USER \
+                --docker-password=$DOCKERHUB_PASS \
+                --docker-server=https://index.docker.io/v1/ \
+                --dry-run=client -o yaml | kubectl apply --validate=false -f -
+            '''
         }
+    }
+}
+
 
         stage('Deploy to AKS') {
             steps {
