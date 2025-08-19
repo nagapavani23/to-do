@@ -10,23 +10,22 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/nagapavani23/to-do.git'
+                script {
+                    // Generate a unique image tag from commit hash
+                    IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                }
             }
         }
 
         stage('AKS Login') {
             steps {
-                // Use your JSON secret for service principal
                 withCredentials([string(credentialsId: 'azure-sp-sdk-auth', variable: 'AZURE_SP_JSON')]) {
                     sh '''
-                    # Parse JSON from the secret
                     AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
                     AZURE_CLIENT_SECRET=$(echo $AZURE_SP_JSON | jq -r '.clientSecret')
                     AZURE_TENANT_ID=$(echo $AZURE_SP_JSON | jq -r '.tenantId')
 
-                    # Login to Azure
                     az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-
-                    # Get AKS credentials
                     az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
                     '''
                 }
@@ -47,14 +46,10 @@ pipeline {
 
         stage('Build & Push Frontend') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKERHUB_USER',
-                    passwordVariable: 'DOCKERHUB_PASS'
-                )]) {
+                script {
                     sh '''
-                    docker build -t $DOCKERHUB_USER/frontend:latest ./frontend
-                    docker push $DOCKERHUB_USER/frontend:latest
+                    docker build --no-cache -t $DOCKERHUB_USER/frontend:${IMAGE_TAG} ./frontend
+                    docker push $DOCKERHUB_USER/frontend:${IMAGE_TAG}
                     '''
                 }
             }
@@ -62,14 +57,10 @@ pipeline {
 
         stage('Build & Push Backend') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKERHUB_USER',
-                    passwordVariable: 'DOCKERHUB_PASS'
-                )]) {
+                script {
                     sh '''
-                    docker build -t $DOCKERHUB_USER/backend:latest ./backend
-                    docker push $DOCKERHUB_USER/backend:latest
+                    docker build --no-cache -t $DOCKERHUB_USER/backend:${IMAGE_TAG} ./backend
+                    docker push $DOCKERHUB_USER/backend:${IMAGE_TAG}
                     '''
                 }
             }
@@ -96,8 +87,15 @@ pipeline {
         stage('Deploy to AKS') {
             steps {
                 sh '''
+                # Replace image tags dynamically before apply
+                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/frontend-deployment.yaml
+                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/backend-deployment.yaml
+
                 kubectl apply -f k8s/frontend-deployment.yaml
+                kubectl rollout status deployment/frontend-deployment
+
                 kubectl apply -f k8s/backend-deployment.yaml
+                kubectl rollout status deployment/backend-deployment
                 '''
             }
         }
