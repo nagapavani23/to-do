@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: myacr.azurecr.io/backend:latest
+        image: nagapavani2301/backend:latest
         env:
         - name: DB_HOST
           value: "postgres-service"
