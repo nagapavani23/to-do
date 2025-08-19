@@ -2,16 +2,16 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = "your-dockerhub-username"
-        DOCKERHUB_PASS = credentials('dockerhub-password') // Jenkins credential ID
-        AKS_RG = "myResourceGroup"
-        AKS_NAME = "myAKSCluster"
+        DOCKERHUB_USER = "nagapavani2301"
+        DOCKERHUB_PASS = credentials('dockerhub-creds') // Jenkins credential ID
+        AKS_RG = "pavani"
+        AKS_NAME = "webapp"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/your-repo/2tier-aks.git'
+                git 'https://github.com/nagapavani23/to-do.git'
             }
         }
 
