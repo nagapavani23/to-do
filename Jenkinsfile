@@ -15,7 +15,7 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                // Safe Docker Hub login using "Username with password" credentials
+                // Variables are only available inside this block
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKERHUB_USER',
@@ -28,19 +28,32 @@ pipeline {
 
         stage('Build & Push Frontend') {
             steps {
-                sh """
-                docker build -t $DOCKERHUB_USER/frontend:latest ./frontend
-                docker push $DOCKERHUB_USER/frontend:latest
-                """
+                // Repeat credentials here if needed
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh """
+                    docker build -t \$DOCKERHUB_USER/frontend:latest ./frontend
+                    docker push \$DOCKERHUB_USER/frontend:latest
+                    """
+                }
             }
         }
 
         stage('Build & Push Backend') {
             steps {
-                sh """
-                docker build -t $DOCKERHUB_USER/backend:latest ./backend
-                docker push $DOCKERHUB_USER/backend:latest
-                """
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh """
+                    docker build -t \$DOCKERHUB_USER/backend:latest ./backend
+                    docker push \$DOCKERHUB_USER/backend:latest
+                    """
+                }
             }
         }
 
@@ -54,8 +67,8 @@ pipeline {
                     sh """
                     az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
                     kubectl create secret docker-registry dockerhub-secret \\
-                        --docker-username=$DOCKERHUB_USER \\
-                        --docker-password=$DOCKERHUB_PASS \\
+                        --docker-username=\$DOCKERHUB_USER \\
+                        --docker-password=\$DOCKERHUB_PASS \\
                         --docker-server=https://index.docker.io/v1/ \\
                         --dry-run=client -o yaml | kubectl apply -f -
                     """
