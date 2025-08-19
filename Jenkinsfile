@@ -76,6 +76,20 @@ pipeline {
             }
         }
 
+        stage('AKS Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'azure-sp-sdk-auth',
+                    usernameVariable: 'AZURE_CLIENT_ID',
+                    passwordVariable: 'AZURE_CLIENT_SECRET'
+           )]) {
+                sh """
+                az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant <TENANT_ID>
+                az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
+                """
+            }
+        }
+    }
         stage('Deploy to AKS') {
             steps {
                 sh """
