@@ -11,8 +11,8 @@ pipeline {
             steps {
                 git branch: 'main', url: 'https://github.com/nagapavani23/to-do.git'
                 script {
-                    // Generate a unique image tag from commit hash
-                    IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    // Store commit hash in env so it is available in all stages
+                    env.IMAGE_TAG = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                 }
             }
         }
@@ -46,7 +46,11 @@ pipeline {
 
         stage('Build & Push Frontend') {
             steps {
-                script {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
                     sh '''
                     docker build --no-cache -t $DOCKERHUB_USER/frontend:${IMAGE_TAG} ./frontend
                     docker push $DOCKERHUB_USER/frontend:${IMAGE_TAG}
@@ -57,7 +61,11 @@ pipeline {
 
         stage('Build & Push Backend') {
             steps {
-                script {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
                     sh '''
                     docker build --no-cache -t $DOCKERHUB_USER/backend:${IMAGE_TAG} ./backend
                     docker push $DOCKERHUB_USER/backend:${IMAGE_TAG}
