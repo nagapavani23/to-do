@@ -15,7 +15,6 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                // Variables are only available inside this block
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKERHUB_USER',
@@ -28,7 +27,6 @@ pipeline {
 
         stage('Build & Push Frontend') {
             steps {
-                // Repeat credentials here if needed
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKERHUB_USER',
@@ -57,6 +55,24 @@ pipeline {
             }
         }
 
+        stage('AKS Login') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'azure-sp-sdk-auth',
+                        usernameVariable: 'AZURE_CLIENT_ID',
+                        passwordVariable: 'AZURE_CLIENT_SECRET'
+                    ),
+                    string(credentialsId: 'azure-tenant-id', variable: 'AZURE_TENANT_ID')
+                ]) {
+                    sh """
+                    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+                    az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
+                    """
+                }
+            }
+        }
+
         stage('Create Docker Secret on AKS') {
             steps {
                 withCredentials([usernamePassword(
@@ -65,7 +81,6 @@ pipeline {
                     passwordVariable: 'DOCKERHUB_PASS'
                 )]) {
                     sh """
-                    az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
                     kubectl create secret docker-registry dockerhub-secret \\
                         --docker-username=\$DOCKERHUB_USER \\
                         --docker-password=\$DOCKERHUB_PASS \\
@@ -76,24 +91,9 @@ pipeline {
             }
         }
 
-        stage('AKS Login') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'azure-sp-sdk-auth',
-                    usernameVariable: 'AZURE_CLIENT_ID',
-                    passwordVariable: 'AZURE_CLIENT_SECRET'
-           )]) {
-                sh """
-                az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant <TENANT_ID>
-                az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
-                """
-            }
-        }
-    }
         stage('Deploy to AKS') {
             steps {
                 sh """
-                az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
                 kubectl apply -f k8s/frontend-deployment.yaml
                 kubectl apply -f k8s/backend-deployment.yaml
                 """
