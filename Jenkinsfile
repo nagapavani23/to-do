@@ -60,22 +60,22 @@ pipeline {
         }
 
         stage('AKS Login') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'azure-sp-sdk-auth',
-                        usernameVariable: 'AZURE_CLIENT_ID',
-                        passwordVariable: 'AZURE_CLIENT_SECRET'
-                    ),
-                    string(credentialsId: 'azure-tenant-id', variable: 'AZURE_TENANT_ID')
-                ]) {
-                    sh """
-                    az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
-                    az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
-                    """
-                }
-            }
+    steps {
+        withCredentials([string(credentialsId: 'azure-sp-json', variable: 'AZURE_SP_JSON')]) {
+            sh '''
+            # Parse the JSON and export variables
+            AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
+            AZURE_CLIENT_SECRET=$(echo $AZURE_SP_JSON | jq -r '.clientSecret')
+            AZURE_TENANT_ID=$(echo $AZURE_SP_JSON | jq -r '.tenantId')
+
+            # Login and get AKS credentials
+            az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+            az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
+            '''
         }
+    }
+}
+
 
         stage('Create Docker Secret on AKS') {
             steps {
