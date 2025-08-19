@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKERHUB_USER = "nagapavani2301"
-        DOCKERHUB_PASS = credentials('dockerhub-creds') // Jenkins credential ID
         AKS_RG = "pavani"
         AKS_NAME = "webapp"
     }
@@ -11,15 +10,16 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url:'https://github.com/nagapavani23/to-do.git'
+                git branch: 'main', url: 'https://github.com/nagapavani23/to-do.git'
             }
         }
 
         stage('Docker Login') {
             steps {
-                sh """
-                echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin
-                """
+                // Using withCredentials to mask password safely
+                withCredentials([string(credentialsId: 'dockerhub-creds', variable: 'DOCKERHUB_PASS')]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                }
             }
         }
 
