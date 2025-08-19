@@ -61,20 +61,23 @@ pipeline {
 
         stage('AKS Login') {
     steps {
-        withCredentials([string(credentialsId: 'azure-sp-json', variable: 'AZURE_SP_JSON')]) {
+        withCredentials([string(credentialsId: 'azure-sp-adk-auth', variable: 'AZURE_SP_JSON')]) {
             sh '''
-            # Parse the JSON and export variables
+            # Parse JSON from the secret
             AZURE_CLIENT_ID=$(echo $AZURE_SP_JSON | jq -r '.clientId')
             AZURE_CLIENT_SECRET=$(echo $AZURE_SP_JSON | jq -r '.clientSecret')
             AZURE_TENANT_ID=$(echo $AZURE_SP_JSON | jq -r '.tenantId')
 
-            # Login and get AKS credentials
+            # Login to Azure
             az login --service-principal -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET --tenant $AZURE_TENANT_ID
+
+            # Get AKS credentials
             az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
             '''
         }
     }
 }
+
 
 
         stage('Create Docker Secret on AKS') {
