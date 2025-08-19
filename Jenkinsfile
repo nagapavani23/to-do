@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER = "nagapavani2301"
         AKS_RG = "pavani"
         AKS_NAME = "webapp"
     }
@@ -16,15 +15,14 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                // Using withCredentials to mask password safely
+                // Safe Docker Hub login using "Username with password" credentials
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKERHUB_USER',
                     passwordVariable: 'DOCKERHUB_PASS'
-            )]) {
-            sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-            }
-
+                )]) {
+                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+                }
             }
         }
 
@@ -46,11 +44,31 @@ pipeline {
             }
         }
 
+        stage('Create Docker Secret on AKS') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+                )]) {
+                    sh """
+                    az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
+                    kubectl create secret docker-registry dockerhub-secret \\
+                        --docker-username=$DOCKERHUB_USER \\
+                        --docker-password=$DOCKERHUB_PASS \\
+                        --docker-server=https://index.docker.io/v1/ \\
+                        --dry-run=client -o yaml | kubectl apply -f -
+                    """
+                }
+            }
+        }
+
         stage('Deploy to AKS') {
             steps {
                 sh """
                 az aks get-credentials -g $AKS_RG -n $AKS_NAME --overwrite-existing
-                kubectl apply -f k8s/
+                kubectl apply -f k8s/frontend-deployment.yaml
+                kubectl apply -f k8s/backend-deployment.yaml
                 """
             }
         }
