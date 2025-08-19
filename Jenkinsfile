@@ -17,9 +17,14 @@ pipeline {
         stage('Docker Login') {
             steps {
                 // Using withCredentials to mask password safely
-                withCredentials([string(credentialsId: 'dockerhub-creds', variable: 'DOCKERHUB_PASS')]) {
-                    sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
-                }
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_PASS'
+            )]) {
+            sh 'echo $DOCKERHUB_PASS | docker login -u $DOCKERHUB_USER --password-stdin'
+            }
+
             }
         }
 
