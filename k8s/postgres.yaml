@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: fastapi-backend
-        image: your-dockerhub-username/fastapi-backend:latest
+        image: nagapavani2301/fastapi-backend:latest
         ports:
         - containerPort: 8000
         volumeMounts:
