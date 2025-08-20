@@ -16,16 +16,16 @@ spec:
       - name: backend
         image: nagapavani2301/backend:latest
         env:
-        - name: DB_HOST
-          value: "postgres-service"
-        - name: DB_NAME
-          value: "tasksdb"
-        - name: DB_USER
-          value: "admin"
-        - name: DB_PASS
-          value: "password"
+        - name: SQLITE_DB_PATH
+          value: "/app/data/tasksdb.db"   # path to SQLite DB file
         ports:
         - containerPort: 8000
+        volumeMounts:
+        - name: sqlite-storage
+          mountPath: /app/data   # folder where DB file will live
+      volumes:
+      - name: sqlite-storage
+        emptyDir: {}   # temp storage (will reset if pod restarts)
 ---
 apiVersion: v1
 kind: Service
