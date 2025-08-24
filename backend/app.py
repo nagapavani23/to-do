@@ -1,83 +1,92 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import sqlite3
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 app = FastAPI()
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to the To-Do API"}
+# -----------------------------
+# Determine SQLite path
+# -----------------------------
+# Use /app/data/tasks.db inside Kubernetes (volume mount)
+# Use ./db/tasks.db locally
+if "KUBERNETES_SERVICE_HOST" in os.environ:
+    DB_DIR = "/app/data"
+else:
+    DB_DIR = os.path.join(os.path.dirname(__file__), "db")
 
+os.makedirs(DB_DIR, exist_ok=True)  # ensure folder exists
+DB_PATH = os.path.join(DB_DIR, "tasks.db")
 
-# CORS
-from fastapi.middleware.cors import CORSMiddleware
+# -----------------------------
+# Enable CORS
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Replace with frontend URL in production
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-DB_NAME = os.getenv("DB_NAME", "tasksdb")
-DB_USER = os.getenv("DB_USER", "admin")
-DB_PASS = os.getenv("DB_PASS", "password")
-
-# Connect to SQLite (database file will be tasks.db)
-conn = sqlite3.connect("tasks.db", check_same_thread=False)  # check_same_thread=False is needed for FastAPI
+# -----------------------------
+# Connect to SQLite
+# -----------------------------
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cur = conn.cursor()
 
-# Create table if not exists
+# Create tasks table
 cur.execute("""
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     description TEXT NOT NULL,
-    task_date TEXT NOT NULL,
-    task_time TEXT NOT NULL
+    datetime TEXT NOT NULL
 )
 """)
 conn.commit()
 
-
+# -----------------------------
+# Pydantic model
+# -----------------------------
 class Task(BaseModel):
     description: str
-    task_date: str   # YYYY-MM-DD
-    task_time: str   # HH:MM
+    datetime: str  # Format: YYYY-MM-DDTHH:MM
 
-# Add task
+# -----------------------------
+# Endpoints
+# -----------------------------
+@app.get("/")
+def root():
+    return {"message": "Welcome to the To-Do API"}
+
 @app.post("/add")
 def add_task(task: Task):
     cur.execute(
-        "INSERT INTO tasks (description, task_date, task_time) VALUES (?, ?, ?)",
-        (task.description, task.task_date, task.task_time)
+        "INSERT INTO tasks (description, datetime) VALUES (?, ?)",
+        (task.description, task.datetime)
     )
     conn.commit()
-    return {"message": "Task added successfully"}
+    task_id = cur.lastrowid
+    return {"id": task_id, "description": task.description, "datetime": task.datetime}
 
-# Get tasks
 @app.get("/tasks")
 def get_tasks():
-    cur.execute("SELECT * FROM tasks")
+    cur.execute("SELECT * FROM tasks ORDER BY datetime")
     rows = cur.fetchall()
-    return [
-        {"id": r[0], "description": r[1], "task_date": r[2], "task_time": r[3]}
-        for r in rows
-    ]
+    return [{"id": r[0], "description": r[1], "datetime": r[2]} for r in rows]
 
-# Update task
 @app.put("/update/{task_id}")
 def update_task(task_id: int, task: Task):
     cur.execute(
-        "UPDATE tasks SET description=?, task_date=?, task_time=? WHERE id=?",
-        (task.description, task.task_date, task.task_time, task_id)
+        "UPDATE tasks SET description=?, datetime=? WHERE id=?",
+        (task.description, task.datetime, task_id)
     )
     conn.commit()
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="Task not found")
-    return {"message": "Task updated"}
+    return {"id": task_id, "description": task.description, "datetime": task.datetime}
 
-# Delete task
 @app.delete("/delete/{task_id}")
 def delete_task(task_id: int):
     cur.execute("DELETE FROM tasks WHERE id=?", (task_id,))
@@ -85,15 +94,3 @@ def delete_task(task_id: int):
     if cur.rowcount == 0:
         raise HTTPException(status_code=404, detail="Task not found")
     return {"message": "Task deleted"}
-
-# Search task
-@app.get("/search/{name}")
-def search_task(name: str):
-    cur.execute("SELECT * FROM tasks WHERE description LIKE ?", (f"%{name}%",))
-    rows = cur.fetchall()
-    if not rows:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return [
-        {"id": r[0], "description": r[1], "task_date": r[2], "task_time": r[3]}
-        for r in rows
-    ]

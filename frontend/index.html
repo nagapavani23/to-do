@@ -1,13 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task Manager</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Task Manager</h1>
-  <input type="text" id="task" placeholder="Enter a task">
-  <button onclick="addTask()">Add Task</button>
-  <ul id="taskList"></ul>
+  <div class="container">
+    <h1>Task Manager</h1>
+
+    <!-- Add task -->
+    <div class="input-group">
+      <input type="text" id="task" placeholder="Enter a task">
+      <input type="datetime-local" id="taskTime">
+      <button id="addBtn" onclick="addTask()">Add Task</button>
+    </div>
+
+    <!-- Single Search Bar -->
+    <div class="search-group">
+      <input type="text" id="searchInput" placeholder="Search tasks...">
+      <button id="searchBtn" onclick="searchTasks()">🔍</button>
+    </div>
+
+    <!-- Results for searched tasks -->
+    <h3>Search Results</h3>
+    <ul id="searchResults"></ul>
+
+    <!-- Main Task List -->
+    <h3>All Tasks</h3>
+    <ul id="taskList"></ul>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

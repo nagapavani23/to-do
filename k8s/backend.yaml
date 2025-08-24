@@ -1,40 +1,54 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: fastapi-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: backend
+      app: fastapi-backend
   template:
     metadata:
       labels:
-        app: backend
+        app: fastapi-backend
     spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64   # Force scheduling on amd64 nodes
       containers:
-      - name: backend
+      - name: fastapi-backend
         image: nagapavani2301/backend:latest
-        env:
-        - name: SQLITE_DB_PATH
-          value: "/app/data/tasksdb.db"   # path to SQLite DB file
         ports:
         - containerPort: 8000
         volumeMounts:
         - name: sqlite-storage
-          mountPath: /app/data   # folder where DB file will live
+          mountPath: /app/data   # SQLite DB will be stored here
       volumes:
       - name: sqlite-storage
-        emptyDir: {}   # temp storage (will reset if pod restarts)
+        persistentVolumeClaim:
+          claimName: sqlite-pvc
+
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sqlite-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service
+  name: fastapi-service
 spec:
   selector:
-    app: backend
+    app: fastapi-backend
   ports:
-  - port: 8000
+  - port: 80
     targetPort: 8000
-  type: ClusterIP
+    protocol: TCP
+  type: LoadBalancer

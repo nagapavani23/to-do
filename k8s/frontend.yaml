@@ -1,3 +1,4 @@
+# Frontend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,12 +13,28 @@ spec:
       labels:
         app: frontend
     spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64   # Force scheduling on amd64 nodes
       containers:
       - name: frontend
         image: nagapavani2301/frontend:latest
         ports:
         - containerPort: 80
+
 ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: frontend-service
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: frontend
+#   ports:
+#   - protocol: TCP
+#     port: 80
+#     targetPort: 80
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -26,6 +43,6 @@ spec:
   selector:
     app: frontend
   ports:
-  - port: 80
-    targetPort: 80
-  type: LoadBalancer
+    - protocol: TCP
+      port: 80
+      targetPort: 80

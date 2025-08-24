@@ -1,0 +1,152 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #f5f6fa;
+  color: #2c3e50;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 30px;
+}
+
+/* Container */
+.container {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 16px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 600px;
+}
+
+/* Headings */
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #34495e;
+}
+
+h3 {
+  margin: 20px 0 10px;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+/* Input Groups */
+.input-group,
+.search-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+input[type="text"],
+input[type="datetime-local"] {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #dcdde1;
+  border-radius: 10px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 4px rgba(52, 152, 219, 0.4);
+}
+
+button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+button:hover {
+  background: #2980b9;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* Task Lists */
+ul {
+  list-style: none;
+  margin-top: 5px;
+}
+
+li {
+  background: #fdfdfd;
+  border: 1px solid #ecf0f1;
+  padding: 12px 14px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  transition: transform 0.1s ease, background 0.2s ease;
+}
+
+li:hover {
+  background: #f9f9f9;
+  transform: translateY(-2px);
+}
+
+li.highlight {
+  border-left: 6px solid #e74c3c;
+  background: #fdeaea;
+}
+
+/* Task Text */
+li span {
+  display: flex;
+  flex-direction: column;
+}
+
+li small {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+}
+
+/* Buttons inside tasks */
+.btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-update {
+  background: #27ae60;
+}
+
+.btn-update:hover {
+  background: #1e874b;
+}
+
+.btn-delete {
+  background: #e74c3c;
+}
+
+.btn-delete:hover {
+  background: #c0392b;
+}
+
+/* Search */
+#searchInput {
+  flex: 1;
+}
+
+#searchBtn {
+  font-size: 1rem;
+  padding: 10px 12px;
+}
