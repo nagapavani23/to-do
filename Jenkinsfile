@@ -86,15 +86,18 @@ pipeline {
             passwordVariable: 'DOCKERHUB_PASS'
         )]) {
             sh '''
+            kubectl delete secret dockerhub-secret --ignore-not-found
             kubectl create secret docker-registry dockerhub-secret \
                 --docker-username=$DOCKERHUB_USER \
                 --docker-password=$DOCKERHUB_PASS \
                 --docker-server=https://index.docker.io/v1/ \
-                --dry-run=client -o yaml | kubectl apply --validate=false -f -
+                --dry-run=client -o yaml | kubectl apply -f -
+            '''
             '''
         }
     }
 }
+
 
 
         stage('Deploy to AKS') {
