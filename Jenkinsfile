@@ -104,14 +104,14 @@ pipeline {
             steps {
                 sh '''
                 # Replace image tags dynamically before apply
-                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/frontend-deployment.yaml
-                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/backend-deployment.yaml
+                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/frontend.yaml
+                sed -i "s|IMAGE_TAG|${IMAGE_TAG}|g" k8s/backend.yaml
 
-                kubectl apply -f k8s/frontend-deployment.yaml
-                kubectl rollout status deployment/frontend-deployment
+                kubectl apply -f k8s/frontend.yaml
+                kubectl rollout status deployment/frontend
 
-                kubectl apply -f k8s/backend-deployment.yaml
-                kubectl rollout status deployment/backend-deployment
+                kubectl apply -f k8s/backend.yaml
+                kubectl rollout status deployment/fastapi-backend
                 '''
             }
         }
