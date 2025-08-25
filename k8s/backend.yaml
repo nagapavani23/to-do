@@ -16,7 +16,7 @@ spec:
         kubernetes.io/arch: amd64   # Force scheduling on amd64 nodes
       containers:
       - name: fastapi-backend
-        image: nagapavani2301/backend:latest
+        image: nagapavani2301/backend:IMAGE_TAG
         ports:
         - containerPort: 8000
         volumeMounts:
