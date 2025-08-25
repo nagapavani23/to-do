@@ -93,7 +93,7 @@ pipeline {
                 --docker-server=https://index.docker.io/v1/ \
                 --dry-run=client -o yaml | kubectl apply -f -
             '''
-            '''
+        
         }
     }
 }
