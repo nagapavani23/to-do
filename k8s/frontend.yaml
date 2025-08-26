@@ -17,7 +17,7 @@ spec:
         kubernetes.io/arch: amd64   # Force scheduling on amd64 nodes
       containers:
       - name: frontend
-        image: nagapavani2301/frontend:IMAGE_TAG
+        image: nagapavani2301/frontend:latest
         ports:
         - containerPort: 80
 

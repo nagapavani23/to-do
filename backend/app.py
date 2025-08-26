@@ -56,11 +56,11 @@ class Task(BaseModel):
 # -----------------------------
 # Endpoints
 # -----------------------------
-@app.get("/")
+@app.get("/api")
 def root():
     return {"message": "Welcome to the To-Do API"}
 
-@app.post("/add")
+@app.post("/api/add")
 def add_task(task: Task):
     cur.execute(
         "INSERT INTO tasks (description, datetime) VALUES (?, ?)",
@@ -70,13 +70,13 @@ def add_task(task: Task):
     task_id = cur.lastrowid
     return {"id": task_id, "description": task.description, "datetime": task.datetime}
 
-@app.get("/tasks")
+@app.get("/api/tasks")
 def get_tasks():
     cur.execute("SELECT * FROM tasks ORDER BY datetime")
     rows = cur.fetchall()
     return [{"id": r[0], "description": r[1], "datetime": r[2]} for r in rows]
 
-@app.put("/update/{task_id}")
+@app.put("/api/update/{task_id}")
 def update_task(task_id: int, task: Task):
     cur.execute(
         "UPDATE tasks SET description=?, datetime=? WHERE id=?",
@@ -87,7 +87,7 @@ def update_task(task_id: int, task: Task):
         raise HTTPException(status_code=404, detail="Task not found")
     return {"id": task_id, "description": task.description, "datetime": task.datetime}
 
-@app.delete("/delete/{task_id}")
+@app.delete("/api/delete/{task_id}")
 def delete_task(task_id: int):
     cur.execute("DELETE FROM tasks WHERE id=?", (task_id,))
     conn.commit()
