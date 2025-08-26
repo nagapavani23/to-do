@@ -41,7 +41,8 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     description TEXT NOT NULL,
-    datetime TEXT NOT NULL
+    datetime TEXT NOT NULL,
+    UNIQUE(description, datetime)
 )
 """)
 conn.commit()
@@ -62,11 +63,15 @@ def root():
 
 @app.post("/api/add")
 def add_task(task: Task):
-    cur.execute(
-        "INSERT INTO tasks (description, datetime) VALUES (?, ?)",
-        (task.description, task.datetime)
-    )
-    conn.commit()
+    try:
+        cur.execute(
+            "INSERT INTO tasks (description, datetime) VALUES (?, ?)",
+            (task.description, task.datetime)
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Task already exists")
+    
     task_id = cur.lastrowid
     return {"id": task_id, "description": task.description, "datetime": task.datetime}
 
