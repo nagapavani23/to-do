@@ -127,26 +127,19 @@ async function searchTasks() {
   const query = document.getElementById("searchInput").value.toLowerCase().trim();
   const resultsList = document.getElementById("searchResults");
 
-  // Always clear previous results
+  // Always clear results before checking
   resultsList.innerHTML = "";
 
-  if (!query) return; // <-- If search is empty, stop here
+  if (!query) return;
 
   try {
     const res = await fetch(`${API_URL}/tasks`);
     const tasks = await res.json();
-
-    // Filter tasks that match
     const matched = tasks.filter(task =>
       task.description.toLowerCase().includes(query)
     );
 
-    // Render only the new matched tasks
-    matched.forEach(task => {
-      if (!resultsList.querySelector(`[data-id="${task.id}"]`)) {
-        resultsList.appendChild(renderTask(task, true));
-      }
-    });
+    matched.forEach(task => resultsList.appendChild(renderTask(task, true)));
   } catch (err) {
     console.error("Error searching tasks:", err);
   }
